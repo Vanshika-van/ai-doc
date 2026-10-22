@@ -1,14 +1,14 @@
-name: docmind
+name: docmind-learn
 
 services:
   postgres:
-    image: pgvector/pgvector:pg16
+    image: pgvector/pgvector:pg16          # Postgres with the vector extension included
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-docmind}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-docmind}
       POSTGRES_DB: ${POSTGRES_DB:-docmind}
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data    # named volume: data survives restarts
     ports: ["5432:5432"]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
@@ -31,15 +31,27 @@ services:
     build: ./backend
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     environment:
+      # "postgres" and "mongo" are the service names above: Docker's internal DNS resolves them
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-docmind}:${POSTGRES_PASSWORD:-docmind}@postgres:5432/${POSTGRES_DB:-docmind}
       MONGO_URL: mongodb://mongo:27017
     volumes:
-      - ./backend:/app
+      - ./backend:/app                     # your code is mounted in, so edits reload instantly
     ports: ["8000:8000"]
-    depends_on:
+    depends_on:                            # start only after both databases are healthy
       postgres: {condition: service_healthy}
       mongo: {condition: service_healthy}
 
+  frontend:
+    build: ./frontend
+    environment:
+      VITE_PROXY_TARGET: http://backend:8000   # the Vite dev server forwards /api to the backend container
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules   # keep container's node_modules, don't overwrite with host's
+    ports: ["5173:5173"]
+    depends_on: [backend]
+
 volumes:
+  frontend_node_modules:
   pgdata:
   mongodata:
