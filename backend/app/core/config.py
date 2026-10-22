@@ -16,4 +16,14 @@ class Settings(BaseSettings):
     access_token_minutes: int = 60
 
 
+
+    # Uploaded files are saved here (inside the container)
+    upload_dir: str = "uploads"
+    max_upload_mb: int = 15
+
+        # How we cut text into chunks (measured in characters)
+    chunk_size: int = 900
+    chunk_overlap: int = 150
+
 settings = Settings()
+

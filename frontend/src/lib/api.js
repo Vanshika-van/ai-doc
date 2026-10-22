@@ -7,7 +7,7 @@ export const tokenStore = {
   clear() { try { localStorage.removeItem(KEY) } catch { /* storage unavailable */ } },
 }
 
-export async function api(path, { method = 'GET', body } = {}) {
+export async function api(path, { method = 'GET', body , form} = {}) {
   const headers = {}
   const token = tokenStore.get()
   if (token) headers.Authorization = `Bearer ${token}` // proves who we are on every request
@@ -16,7 +16,7 @@ export async function api(path, { method = 'GET', body } = {}) {
   const res = await fetch(`/api${path}`, {
     method,
     headers,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
+        body: form ?? (body !== undefined ? JSON.stringify(body) : undefined),
   })
 
   if (!res.ok) {
