@@ -1,6 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { api, streamChat } from '../lib/api'
+import { api, openDocument, streamChat } from '../lib/api'
+
+// Turns "...1.5 percent [1]." into text with a clickable [1] button
+function Answer({ text, onCite }) {
+  return text.split(/(\[\d+\])/).map((part, i) => {
+    const match = part.match(/^\[(\d+)\]$/)
+    if (!match) return part
+    return <button key={i} type="button" className="cite" onClick={() => onCite(Number(match[1]))}>{match[1]}</button>
+  })
+}
 
 // Chat with your documents. Left: saved conversations. Right: the messages and the question box.
 export default function Chat() {
@@ -11,6 +20,7 @@ export default function Chat() {
   const [streaming, setStreaming] = useState(false)
   const [error, setError] = useState('')
   const bottom = useRef(null)
+  const [picked, setPicked] = useState(null) // { message: 2, index: 1 } = source [1] of message 2 is highlighted
 
   const loadConversations = () => api('/chat/conversations').then(setConversations).catch((e) => setError(e.message))
   useEffect(() => { loadConversations() }, [])
@@ -37,6 +47,20 @@ export default function Chat() {
     await api(`/chat/conversations/${id}`, { method: 'DELETE' })
     if (id === activeId) startNew()
     loadConversations()
+  }
+
+  function cite(messageIndex, sourceIndex) {
+    setPicked({ message: messageIndex, index: sourceIndex })
+    // wait a moment for the source list to open, then scroll to the chosen source
+    setTimeout(() => document.getElementById(`src-${messageIndex}-${sourceIndex}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50)
+  }
+
+  async function openSource(source) {
+    try {
+      await openDocument(source.document_id, source.page)
+    } catch (err) {
+      setError(err.message)
+    }
   }
 
   // Change the LAST message (the assistant answer being written) without touching the others
@@ -91,12 +115,19 @@ export default function Chat() {
           {messages.length === 0 && <p className="muted center">Ask a question about your documents.</p>}
           {messages.map((m, i) => (
             <div key={i} className={`msg ${m.role}`}>
-              <p className="bubble">{m.content || (streaming && i === messages.length - 1 ? '...' : '')}</p>
+              <p className="bubble">
+                {m.content ? <Answer text={m.content} onCite={(n) => cite(i, n)} /> : (streaming && i === messages.length - 1 ? '...' : '')}
+              </p>
               {m.sources?.length > 0 && (
-                <details className="sources">
+                // key changes when a citation is clicked, so the list re-renders OPEN
+                <details className="sources" key={picked?.message === i ? `open-${picked.index}` : 'closed'} open={picked?.message === i}>
                   <summary>{m.sources.length} sources</summary>
                   {m.sources.map((s) => (
-                    <p key={s.index}><strong>[{s.index}] {s.filename} · page {s.page}</strong><br />{s.text}</p>
+                    <div key={s.index} id={`src-${i}-${s.index}`} className={`src ${picked?.message === i && picked.index === s.index ? 'picked' : ''}`}>
+                      <strong>[{s.index}] {s.filename} · page {s.page}</strong>
+                      <button type="button" className="open" onClick={() => openSource(s)}>Open page {s.page}</button>
+                      <p>{s.text}</p>
+                    </div>
                   ))}
                 </details>
               )}

@@ -3,6 +3,7 @@ import uuid
 from pathlib import Path
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile, status
+from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -80,6 +81,17 @@ def list_chunks(document_id: int, user: User = Depends(get_current_user), db: Se
     """Show the pieces a document was cut into (handy to check that chunking worked)."""
     doc = get_own_document(db, user, document_id)
     return db.scalars(select(Chunk).where(Chunk.document_id == doc.id).order_by(Chunk.chunk_index)).all()
+
+
+@router.get("/{document_id}/file")
+def download_file(document_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Send back the original file, so a citation can open the real page. Only the owner can get it."""
+    doc = get_own_document(db, user, document_id)
+    if not os.path.exists(doc.storage_path):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "The original file is no longer stored.")
+    media_type = "application/pdf" if doc.storage_path.endswith(".pdf") else "text/plain; charset=utf-8"
+    # "inline" = show it in the browser tab instead of downloading it
+    return FileResponse(doc.storage_path, media_type=media_type, filename=doc.filename, content_disposition_type="inline")
 
 
 @router.delete("/{document_id}", status_code=status.HTTP_204_NO_CONTENT)

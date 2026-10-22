@@ -21,3 +21,11 @@ body:has(.chat) { place-items: stretch; }
 .sources p { margin: 8px 0 0; padding: 8px 10px; background: #f0f2f9; border-radius: 8px; }
 .main .searchbar { margin-top: 10px; }
 @media (max-width: 700px) { .chat { grid-template-columns: 1fr; } .side { display: none; } }
+
+/* Clickable citations */
+.sources .src { margin: 8px 0 0; padding: 8px 10px; background: #f0f2f9; border-radius: 8px; border: 2px solid transparent; }
+.sources .src p { margin: 6px 0 0; }
+.sources .src.picked { border-color: #4a5bff; background: #eef0ff; }
+.sources .open { margin-left: 8px; padding: 2px 8px; font-size: 0.8rem; background: transparent; color: #4a5bff; border: 1px solid #4a5bff; }
+.cite { display: inline-block; min-width: 20px; margin: 0 2px; padding: 0 6px; border-radius: 6px; background: #eef0ff; color: #4a5bff; font-size: 0.8rem; font-weight: 700; border: 1px solid #c9ceff; }
+.cite:hover { background: #4a5bff; color: #fff; }

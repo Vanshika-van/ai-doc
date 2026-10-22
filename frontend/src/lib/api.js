@@ -76,3 +76,19 @@ export async function streamChat(body, onEvent) {
     parsed.events.forEach((e) => onEvent(e.name, e.data))
   }
 }
+
+
+// Open the ORIGINAL document in a new tab, at the cited page (PDF viewers understand "#page=3").
+// A normal link cannot send our login token, so we download the file first and open that copy.
+export async function openDocument(documentId, page) {
+  const tab = window.open('', '_blank') // open the tab NOW, while the click still counts (popup blockers)
+  try {
+    const res = await fetch(`/api/documents/${documentId}/file`, { headers: authHeaders() })
+    if (!res.ok) throw new Error(await errorMessage(res))
+    const url = URL.createObjectURL(await res.blob())
+    if (tab) tab.location.href = page ? `${url}#page=${page}` : url
+  } catch (err) {
+    tab?.close()
+    throw err
+  }
+}
