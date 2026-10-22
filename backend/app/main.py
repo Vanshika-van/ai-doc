@@ -1,7 +1,7 @@
 from fastapi import APIRouter, FastAPI
 from sqlalchemy import text
 
-from app.api import auth, documents
+from app.api import auth, chat ,documents,search
 from app.core.config import settings
 from app.db.mongo import get_mongo
 from app.db.postgres import engine
@@ -10,7 +10,9 @@ app = FastAPI(title=settings.app_name, version="0.1.0")
 
 api = APIRouter(prefix="/api")
 api.include_router(auth.router)
+api.include_router(chat.router)
 api.include_router(documents.router)
+api.include_router(search.router)
 
 @api.get("/health")
 async def health():

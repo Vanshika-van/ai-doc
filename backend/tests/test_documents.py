@@ -31,7 +31,8 @@ def test_upload_is_read_and_chunked_in_background(client):
     text = " ".join(f"sentence number {i}." for i in range(200)).encode()
     doc_id = upload(client, h, data=text).json()["id"]
     doc = client.get("/api/documents", headers=h).json()[0]  # background task has finished by now
-    assert doc["status"] == "ready" and doc["chunk_count"] > 1 and doc["page_count"] == 1
+    assert doc["status"] == "ready", doc["error"]
+    assert doc["chunk_count"] > 1 and doc["page_count"] == 1
     chunks = client.get(f"/api/documents/{doc_id}/chunks", headers=h).json()
     assert len(chunks) == doc["chunk_count"] and chunks[0]["page"] == 1 and chunks[0]["chunk_index"] == 0
 

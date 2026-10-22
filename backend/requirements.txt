@@ -12,3 +12,6 @@ bcrypt>=4.1
 email-validator>=2.1
 python-multipart>=0.0.9
 pypdf>=4.3
+pgvector>=0.3
+anthropic>=0.40
+mongomock-motor>=0.0.30

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { api } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
 
@@ -91,6 +92,8 @@ export default function Home() {
           ))}
         </ul>
       )}
+
+      <Link to="/chat" className="cta">Chat with your documents →</Link>
     </main>
   )
 }

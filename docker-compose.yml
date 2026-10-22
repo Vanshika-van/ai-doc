@@ -34,6 +34,7 @@ services:
       # "postgres" and "mongo" are the service names above: Docker's internal DNS resolves them
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-docmind}:${POSTGRES_PASSWORD:-docmind}@postgres:5432/${POSTGRES_DB:-docmind}
       MONGO_URL: mongodb://mongo:27017
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}   # read from your .env file; empty = offline mode
     volumes:
       - ./backend:/app                     # your code is mounted in, so edits reload instantly
     ports: ["8000:8000"]

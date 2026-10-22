@@ -3,6 +3,7 @@ from app.db.postgres import SessionLocal
 from app.models.chunk import Chunk
 from app.models.document import Document
 from app.services.chunking import chunk_pages
+from app.services.embeddings import embed_texts
 from app.services.extract import extract_pages
 
 
@@ -15,7 +16,11 @@ def ingest_document(document_id: int) -> None:
         chunks = chunk_pages(pages, settings.chunk_size, settings.chunk_overlap)
         if not chunks:
             raise ValueError("No readable text found. Scanned PDFs (images of text) are not supported yet.")
-        db.add_all(Chunk(document_id=doc.id, chunk_index=i, page=page, content=text) for i, (page, text) in enumerate(chunks))
+        vectors = embed_texts([text for _, text in chunks])  # one list of numbers per chunk
+        db.add_all(
+            Chunk(document_id=doc.id, chunk_index=i, page=page, content=text, embedding=vector)
+            for i, ((page, text), vector) in enumerate(zip(chunks, vectors))
+        )
         doc.page_count = len(pages)
         doc.chunk_count = len(chunks)
         doc.status = "ready"
