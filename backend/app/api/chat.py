@@ -50,9 +50,12 @@ async def chat_stream(body: ChatRequest, user: User = Depends(get_current_user),
             async for piece in llm.stream_answer(body.question, sources, history):
                 parts.append(piece)
                 yield sse("token", {"text": piece})
+        except llm.AIUnavailable as exc:  # our own messages are written for users, so they are safe to show
+            yield sse("error", {"message": str(exc)})
+            return
         except Exception:  # noqa: BLE001 - never show the provider's raw error to the user
             log.exception("AI streaming failed")
-            yield sse("error", {"message": "The AI service failed to answer. Check your API key and try again."})
+            yield sse("error", {"message": "The AI service failed to answer. Check that Ollama is running and try again."})
             return
         saved = await store.add_message(conversation_id, "assistant", "".join(parts), sources)
         yield sse("done", {"message_id": str(saved["_id"])})

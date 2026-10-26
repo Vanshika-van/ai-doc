@@ -77,7 +77,6 @@ export async function streamChat(body, onEvent) {
   }
 }
 
-
 // Open the ORIGINAL document in a new tab, at the cited page (PDF viewers understand "#page=3").
 // A normal link cannot send our login token, so we download the file first and open that copy.
 export async function openDocument(documentId, page) {

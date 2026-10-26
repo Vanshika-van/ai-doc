@@ -30,10 +30,15 @@ class Settings(BaseSettings):
     openai_api_key: str = ""            # optional: real "meaning" embeddings (see embeddings.py)
     embedding_model: str = "text-embedding-3-small"
 
-    
-    # The AI that writes answers. Without a key the app runs in "offline mode".
+    # The AI that writes answers.
+    #   "auto"    -> Claude if ANTHROPIC_API_KEY is set, otherwise your local Ollama
+    #   "ollama"  -> always Ollama     "claude" -> always Claude     "offline" -> no AI (used by tests)
+    llm_provider: str = "auto"
     anthropic_api_key: str = ""
-    llm_model: str = "claude-sonnet-5-5"
+    claude_model: str = "claude-sonnet-5-5"
+    ollama_model: str = "llama3.2:3b"
+    # Ollama runs on your computer. From inside Docker, your computer is "host.docker.internal".
+    ollama_base_url: str = "http://host.docker.internal:11434"
 
 
 settings = Settings()

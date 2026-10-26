@@ -2,14 +2,14 @@ name: docmind-learn
 
 services:
   postgres:
-    image: pgvector/pgvector:pg16          # Postgres with the vector extension included
+    image: pgvector/pgvector:pg16
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-docmind}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-docmind}
       POSTGRES_DB: ${POSTGRES_DB:-docmind}
     volumes:
-      - pgdata:/var/lib/postgresql/data    # named volume: data survives restarts
-    ports: ["5432:5432"]
+      - pgdata:/var/lib/postgresql/data
+    ports: ["5433:5432"]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
@@ -20,7 +20,6 @@ services:
     image: mongo:7
     volumes:
       - mongodata:/data/db
-    ports: ["27017:27017"]
     healthcheck:
       test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
       interval: 5s
@@ -31,24 +30,28 @@ services:
     build: ./backend
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     environment:
-      # "postgres" and "mongo" are the service names above: Docker's internal DNS resolves them
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-docmind}:${POSTGRES_PASSWORD:-docmind}@postgres:5432/${POSTGRES_DB:-docmind}
       MONGO_URL: mongodb://mongo:27017
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}   # read from your .env file; empty = offline mode
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      LLM_PROVIDER: ${LLM_PROVIDER:-auto}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2:3b}
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
-      - ./backend:/app                     # your code is mounted in, so edits reload instantly
+      - ./backend:/app
     ports: ["8000:8000"]
-    depends_on:                            # start only after both databases are healthy
+    depends_on:
       postgres: {condition: service_healthy}
       mongo: {condition: service_healthy}
 
   frontend:
     build: ./frontend
     environment:
-      VITE_PROXY_TARGET: http://backend:8000   # the Vite dev server forwards /api to the backend container
+      VITE_PROXY_TARGET: http://backend:8000
     volumes:
       - ./frontend:/app
-      - frontend_node_modules:/app/node_modules   # keep container's node_modules, don't overwrite with host's
+      - frontend_node_modules:/app/node_modules
     ports: ["5173:5173"]
     depends_on: [backend]
 
